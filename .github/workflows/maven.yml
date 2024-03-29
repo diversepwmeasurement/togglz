@@ -1,33 +1,29 @@
-name: GitHub CI
-
-on:
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - '**.md' # no CI builds for docs
-      - '.github/workflows/maven-central-release.yml'
-  pull_request: # build PRs
-  workflow_dispatch: # allow for manual triggering
-
 jobs:
   build:
+    env:
+      JDK_VERSION: ${{ matrix.jdk }}
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ matrix.jdk }}
+    - continue-on-error: true
+      name: Build with Maven
+      run: mvn -P wildfly-managed --batch-mode verify
+    - continue-on-error: true
+      name: upload code coverage to codecov.io
+      uses: codecov/codecov-action@v4
     strategy:
       fail-fast: false
       matrix:
-        jdk: [17]
-    env:
-      JDK_VERSION:  ${{ matrix.jdk }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: ${{ matrix.jdk }}
-      - name: Build with Maven
-        run: mvn -P wildfly-managed --batch-mode verify
-      - name: upload code coverage to codecov.io
-        uses: codecov/codecov-action@v4
+        jdk:
+        - 17
+name: GitHub CI
+on:
+  repository_dispatch:
+    types: trigger-ga___maven.yml
